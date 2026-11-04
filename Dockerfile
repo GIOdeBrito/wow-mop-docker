@@ -7,4 +7,5 @@ RUN apt update && apt install -y git cmake build-essential zlib1g-dev libssl-dev
 RUN git clone --depth 1 --branch v1.0.4 https://github.com/1LineAtaTime/LoA-Pandaria-Playerbots.git && \
 	mkdir build && cd build && \
 	cmake ../LoA-Pandaria-Playerbots -DCMAKE_BUILD_TYPE=Release && \
-	make -j$(nproc) && make install
+	#make -j$(nproc) && make install
+	make -j2 && make install
