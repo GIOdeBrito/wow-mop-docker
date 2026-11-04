@@ -1,0 +1,8 @@
+
+CREATE DATABASE auth;
+
+CREATE DATABASE characters;
+
+CREATE DATABASE world;
+
+CREATE DATABASE playerbots;

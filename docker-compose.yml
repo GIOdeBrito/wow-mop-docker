@@ -1,0 +1,14 @@
+services:
+    db:
+        #image: mysql:8.0
+        build: ./mysqlserver
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+        volumes:
+            - ./mysqlserver/init-check.sh:/docker-entrypoint-initdb.d/script1.sh
+            - ./mysqlserver/0000-init.sql:/giosql/0000-init.sql
+    app:
+        build: .
+        command: sleep infinity
+        depends_on:
+            - db
