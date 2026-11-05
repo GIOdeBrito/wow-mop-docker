@@ -30,9 +30,12 @@ services:
     worldserver:
         build: ./authserver
         command: /usr/local/bin/worldserver
+        stdin_open: true
+        tty: true
         volumes:
             - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
             - ./worldserver/worldserver:/usr/local/bin/worldserver
+            - ./worldserver/data:/usr/local/bin/data
         networks:
             - pandaria-network
         ports:
