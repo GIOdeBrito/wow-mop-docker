@@ -7,8 +7,38 @@ services:
         volumes:
             - ./mysqlserver/init-check.sh:/docker-entrypoint-initdb.d/script1.sh
             - ./mysqlserver/0000-init.sql:/giosql/0000-init.sql
-    app:
-        build: .
+        networks:
+            - pandaria-network
+    build:
+        build: ./pandaria
         command: sleep infinity
+        networks:
+            - pandaria-network
+        profiles: [ "build" ]
+    authserver:
+        build: ./authserver
+        command: /usr/local/bin/authserver
+        volumes:
+            - ./authserver/authserver.conf:/usr/local/etc/authserver.conf
+            - ./authserver/authserver:/usr/local/bin/authserver
+        networks:
+            - pandaria-network
+        ports:
+            - "3724:3724"
         depends_on:
             - db
+    worldserver:
+        build: ./authserver
+        command: /usr/local/bin/worldserver
+        volumes:
+            - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
+            - ./worldserver/worldserver:/usr/local/bin/worldserver
+        networks:
+            - pandaria-network
+        ports:
+            - "8085:8085"
+        depends_on:
+            - db
+
+networks:
+    pandaria-network:
