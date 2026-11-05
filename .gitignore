@@ -1,2 +1,5 @@
-authserver/authserver
-worldserver/worldserver
+!authserver/authserver
+
+!worldserver/worldserver
+worldserver/data/*
+!worldserver/data/.gitkeep
