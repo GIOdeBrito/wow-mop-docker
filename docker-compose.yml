@@ -36,6 +36,7 @@ services:
             - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
             - ./worldserver/worldserver:/usr/local/bin/worldserver
             - ./worldserver/data:/usr/local/bin/data
+            - ./worldserver/data:/usr/local/bin/Data
         networks:
             - pandaria-network
         ports:
