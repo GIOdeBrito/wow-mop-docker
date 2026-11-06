@@ -35,6 +35,12 @@ require_tool()
 
 find_extractor()
 {
+	if command -v unrar >/dev/null 2>&1
+	then
+		echo "unrar"
+		return 0
+	fi
+
 	if command -v 7z >/dev/null 2>&1
 	then
 		echo "7z"
@@ -47,7 +53,7 @@ find_extractor()
 		return 0
 	fi
 
-	echo "Missing required tool: 7z (package p7zip-full)" >&2
+	echo "Missing required tool: unrar or 7z (packages unrar / p7zip-full)" >&2
 	exit 1
 }
 
@@ -70,10 +76,19 @@ extract_rar()
 	rm -rf "$EXTRACT_DIR"
 	mkdir -p "$EXTRACT_DIR"
 
-	if ! "$EXTRACTOR" x "$RAR_PATH" -o"$EXTRACT_DIR" -y
+	if [ "$EXTRACTOR" = "unrar" ]
 	then
-		rm -rf "$EXTRACT_DIR"
-		exit 1
+		if ! "$EXTRACTOR" x -o+ "$RAR_PATH" "$EXTRACT_DIR/"
+		then
+			rm -rf "$EXTRACT_DIR"
+			exit 1
+		fi
+	else
+		if ! "$EXTRACTOR" x "$RAR_PATH" -o"$EXTRACT_DIR" -y
+		then
+			rm -rf "$EXTRACT_DIR"
+			exit 1
+		fi
 	fi
 
 	if [ ! -d "$SRC_DIR" ]
