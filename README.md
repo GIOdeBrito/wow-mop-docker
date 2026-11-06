@@ -27,14 +27,20 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 3. Generate game data via the `maptools` service:
 
    - Do not drop in externally extracted data. Extraction must be done via `maptools` so `dbc`, `maps`, `vmaps`, and `mmaps` match this build.
-   - Start the helper container:
+   - The `maptools` service is wired to run `maptools/extract-map.sh` automatically (`command: ["bash", "/maptools/extract-map.sh"]` in `docker-compose.yml`).
+   - Run it:
 
      ```bash
-     docker compose --profile maptools up -d maptools
-     docker compose exec maptools bash
+     docker compose --profile maptools up maptools
      ```
 
-   - Inside the container, `/maptools` holds `mapextractor`, `vmap4extractor`, `vmap4assembler`, and `mmaps_generator`, and `/client_data` holds your client data from `WOW_DATA_FOLDER_PATH`. Run the extractors from `/maptools` so output lands in `./maptools/data` on the host (`cameras`, `dbc`, `maps`, `vmaps`).
+     This runs `mapextractor`, `vmap4extractor`, and `vmap4assembler` against `/client_data` (your `WOW_DATA_FOLDER_PATH`) and writes to `./maptools/data` on the host (`cameras`, `dbc`, `maps`, `vmaps`). `mmaps` generation is skipped by default because it takes several hours.
+   - For full generation including `mmaps`:
+
+     ```bash
+     docker compose --profile maptools run maptools bash /maptools/extract-map.sh --with-mmaps
+     ```
+
    - Copy the result into the worldserver data directory:
 
      ```bash
@@ -128,16 +134,23 @@ Point your 5.4.8 client at the host running `authserver:3724`, usually by settin
 
 `dbc`, `maps`, `vmaps`, and `mmaps` must be generated with the `maptools` service. Do not skip this by reusing data extracted for another core or version.
 
+The service runs `bash /maptools/extract-map.sh` on `up`:
+
 ```bash
-docker compose --profile maptools up -d maptools
-docker compose exec maptools bash
+docker compose --profile maptools up maptools
 ```
 
 Inside the container:
 
-- `/maptools` - extractor binaries (`mapextractor`, `vmap4extractor`, `vmap4assembler`, `mmaps_generator`)
+- `/maptools` - extractor binaries (`mapextractor`, `vmap4extractor`, `vmap4assembler`, `mmaps_generator`) plus `extract-map.sh`
 - `/client_data` - your MoP client data from `WOW_DATA_FOLDER_PATH`
 - Run output goes to `./maptools/data` on the host, then copy it to `./worldserver/data` as described in Setup step 3.
+
+`mmaps` is skipped by default (takes several hours). Include it with:
+
+```bash
+docker compose --profile maptools run maptools bash /maptools/extract-map.sh --with-mmaps
+```
 
 It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_data`.
 

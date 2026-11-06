@@ -50,7 +50,7 @@ services:
 
     maptools:
         image: ubuntu:24.04
-        command: sleep infinity
+        command: ["bash", "/maptools/extract-map.sh"]
         env_file: .env
         volumes:
             - ./maptools:/maptools
