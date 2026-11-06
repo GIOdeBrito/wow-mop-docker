@@ -57,5 +57,16 @@ services:
             - ${WOW_DATA_FOLDER_PATH}:/client_data
         profiles: [ "maptools" ]
 
+    wow-downloader:
+        build: ./wow-downloader
+        command: ["bash", "/wow-downloader/download.sh"]
+        env_file: .env
+        environment:
+            LOCALES: ${LOCALES:-enUS ptBR}
+        volumes:
+            - ./wow-downloader:/wow-downloader
+            - ./maptools/data_wow:/data
+        profiles: [ "wow-downloader" ]
+
 networks:
     pandaria-network:

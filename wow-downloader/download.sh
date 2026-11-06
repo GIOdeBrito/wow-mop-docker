@@ -1,11 +1,9 @@
 #!/bin/sh
 
-# @author GIOdeBrito
-#
 # Downloads MoP 5.4.8 client data for maptools extraction.
-# Usage: sh scripts/download-locales.sh [TARGET_DIR]
-# Env: TARGET_DIR (default 5.4.8), LOCALES (default "enUS ptBR"), BASE_URL override.
-# Example: TARGET_DIR=maptools/data LOCALES="enUS ptBR" sh scripts/download-locales.sh
+# Runs inside wow-downloader service, writes to /data bind mount.
+# Env: LOCALES (default "enUS ptBR"), BASE_URL override.
+# Host data lands in ./maptools/data_wow/ via compose volume.
 #
 # Original author: @danielsreichenbach danielsreichenbach
 # Original source: https://gist.github.com/danielsreichenbach/3e56a6b0a6697742955b39e10e2d32e8
@@ -13,16 +11,9 @@
 set -eu
 
 BASE_URL="${BASE_URL:-http://dist.blizzard.com.edgesuite.net}"
-TARGET_DIR="${1:-${TARGET_DIR:-5.4.8}}"
+TARGET_DIR="/data"
 LOCALES="${LOCALES:-enUS ptBR}"
 MFIL="wow-18414-447E3E618F731CCBF4F7D2C4E56C5644.mfil"
-
-case "$TARGET_DIR" in
-	""|*..*)
-		echo "Invalid TARGET_DIR: '$TARGET_DIR'" >&2
-		exit 1
-		;;
-esac
 
 if [ -z "$LOCALES" ]
 then

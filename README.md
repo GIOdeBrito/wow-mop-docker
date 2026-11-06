@@ -5,7 +5,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 ## Requires
 
 - Docker with Compose v2
-- MoP 5.4.8 client (`Data/` folder with MPQs, or download it via `scripts/download-locales.sh` below)
+- MoP 5.4.8 client (`Data/` folder with MPQs, or download it via the `wow-downloader` service below)
 - MoP `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps` (generated via the `maptools` service, see below)
 - Server binaries: `authserver` and `worldserver`
 
@@ -22,39 +22,38 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
    cp .env.example .env
    ```
 
-   Set `WOW_DATA_FOLDER_PATH` in `.env` to your MoP client data path. It is required by the `maptools` service.
+    Set `WOW_DATA_FOLDER_PATH` in `.env` to your MoP client data path. It is required by the `maptools` service.
 
-   If you downloaded via `scripts/download-locales.sh maptools/data` below, set it to the absolute path of `maptools/data/Data`:
+    If you downloaded via the `wow-downloader` service below, set it to the absolute path of `maptools/data_wow/Data`:
 
-   ```bash
-   WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data/Data
-   ```
+    ```bash
+    WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data_wow/Data
+    ```
 
 2b. Download client data (skip if you already own a 5.4.8 client):
 
-   ```bash
-   sh scripts/download-locales.sh maptools/data
-   ```
+    ```bash
+    docker compose --profile wow-downloader up wow-downloader
+    ```
 
-   This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `maptools/data/` (`maptools/data/Data/`, `maptools/data/Updates/`). Total is ~25 GB. The script is idempotent, safe to re-run to resume.
+    This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `maptools/data_wow/` (`maptools/data_wow/Data/`, `maptools/data_wow/Updates/`). Total is ~25 GB. The service is idempotent, safe to re-run to resume.
 
-   Options:
+    Options:
 
-   ```bash
-   # Custom target dir (default 5.4.8, use maptools/data for maptools input)
-   sh scripts/download-locales.sh maptools/data
+    ```bash
+    # enUS only to save time/space
+    LOCALES=enUS docker compose --profile wow-downloader up wow-downloader
 
-   # enUS only to save time/space
-   LOCALES=enUS sh scripts/download-locales.sh maptools/data
+    # ptBR only
+    LOCALES=ptBR docker compose --profile wow-downloader up wow-downloader
+    ```
 
-   # ptBR only
-   LOCALES=ptBR sh scripts/download-locales.sh maptools/data
-   ```
+    Or set `LOCALES` in `.env` (example in `.env.example`). The compose file defaults to `enUS ptBR` when unset.
 
-   Notes:
+    Notes:
 
-   - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and continues. They are not required for `maptools` extraction.
-   - `maptools/data/` is git-ignored, safe for large binaries.
+    - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and continues. They are not required for `maptools` extraction.
+    - `maptools/data_wow/` is git-ignored, safe for large binaries.
 
 3. Generate game data via the `maptools` service:
 
@@ -102,12 +101,13 @@ On a fresh database it prints `Fresh database detected` at the end. See account 
 
 ## Services
 
-| Service      | Port      | Notes                                  |
-| ------------ | --------- | ------------------------------------ |
-| `db`         | none      | MySQL 8.0, root password `password`  |
-| `authserver` | `3724`    | Realm auth, config `authserver/*.conf` |
-| `worldserver`| `8085`    | World, config `worldserver/*.conf`    |
-| `maptools`   | none      | Profile-only helper, see below         |
+| Service          | Port      | Notes                                  |
+| ---------------- | --------- | ------------------------------------ |
+| `db`             | none      | MySQL 8.0, root password `password`  |
+| `authserver`     | `3724`    | Realm auth, config `authserver/*.conf` |
+| `worldserver`    | `8085`    | World, config `worldserver/*.conf`    |
+| `maptools`       | none      | Profile-only helper, see below         |
+| `wow-downloader` | none      | Profile-only client fetcher, see below |
 
 All services share the `pandaria-network` bridge. `authserver` and `worldserver` depend on `db`.
 
@@ -168,17 +168,17 @@ Point your 5.4.8 client at the host running `authserver:3724`, usually by settin
 
 ### Download the client first
 
-If you do not own a 5.4.8 client, use `scripts/download-locales.sh`:
+If you do not own a 5.4.8 client, use the `wow-downloader` service:
 
 ```bash
-sh scripts/download-locales.sh maptools/data
+docker compose --profile wow-downloader up wow-downloader
 ```
 
 What it does:
 
 - `set -eu` fail-fast, `curl -f` so HTTP errors abort instead of saving error pages.
-- Downloads to `TARGET_DIR` (`$1` or `$TARGET_DIR`, default `5.4.8`). Use `maptools/data` so `WOW_DATA_FOLDER_PATH` can point at `maptools/data/Data`.
-- Downloads `LOCALES` (default `enUS ptBR`, override with `LOCALES=enUS`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
+- Downloads to `/data` in-container, bind-mounted to `maptools/data_wow/` on host. Set `WOW_DATA_FOLDER_PATH` to `maptools/data_wow/Data` for `maptools`.
+- Downloads `LOCALES` (default `enUS ptBR` via compose `${LOCALES:-enUS ptBR}`, override with `LOCALES=enUS` or `.env`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
 - Base MPQs, expansion MPQs, and base updates come from the NA CDN path.
 - Partial files are removed on failure. Re-run resumes.
 - Full layout: `Data/*.MPQ` (32), `Data/enUS/*.MPQ` (24), `Data/ptBR/*.MPQ` (24), `Updates/*.MPQ` (2), plus MFIL.
@@ -186,7 +186,7 @@ What it does:
 Then set in `.env`:
 
 ```bash
-WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data/Data
+WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data_wow/Data
 ```
 
 ### Extract game data
