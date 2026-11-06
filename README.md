@@ -65,18 +65,12 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
      docker compose --profile maptools up maptools
      ```
 
-     This runs `mapextractor`, `vmap4extractor`, and `vmap4assembler` against `/client_data` (your `WOW_DATA_FOLDER_PATH`) and writes to `./maptools/data` on the host (`cameras`, `dbc`, `maps`, `vmaps`). `mmaps` generation is skipped by default because it takes several hours.
-   - For full generation including `mmaps`:
+      This runs `mapextractor`, `vmap4extractor`, and `vmap4assembler` against `/client_data` (your `WOW_DATA_FOLDER_PATH`) and writes to `./maptools/data` on the host (`cameras`, `dbc`, `maps`, `vmaps`). `mmaps` generation is skipped by default because it takes several hours. `worldserver` consumes `./maptools/data` directly via its bind mount, no copy step needed.
+    - For full generation including `mmaps`:
 
-     ```bash
-      docker compose --profile maptools run maptools bash /maptools/extract-all.sh --with-mmaps
-     ```
-
-   - Copy the result into the worldserver data directory:
-
-     ```bash
-     cp -r ./maptools/data/* ./worldserver/data/
-     ```
+      ```bash
+       docker compose --profile maptools run maptools bash /maptools/extract-all.sh --with-mmaps
+      ```
 
 4. Start everything:
 
@@ -200,7 +194,7 @@ Inside the container:
 
 - `/maptools` - extractor binaries (`mapextractor`, `vmap4extractor`, `vmap4assembler`, `mmaps_generator`) plus scripts (`extract-maps.sh`, `extract-vmaps.sh`, `assemble-vmaps.sh`, `generate-mmaps.sh`, `extract-all.sh`)
 - `/client_data` - your MoP client data from `WOW_DATA_FOLDER_PATH`
-- Run output goes to `./maptools/data` on the host, then copy it to `./worldserver/data` as described in Setup step 3.
+- Run output goes to `./maptools/data` on the host, which `worldserver` consumes directly via its bind mount (no copy step).
 
 `mmaps` is skipped by default (takes several hours). Include it with:
 
@@ -213,7 +207,7 @@ It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_
 ## Troubleshooting
 
 - `ENV file not found` - copy `.env.example` to `.env` first.
-- `worldserver` exits immediately - missing binaries or missing `worldserver/data` content. Regenerate it via `maptools` and copy it to `worldserver/data`. Check `docker compose logs worldserver`.
+- `worldserver` exits immediately - missing binaries or missing extracted content. Regenerate it via `maptools` (output is consumed directly from `./maptools/data`). Check `docker compose logs worldserver`.
 - `authserver` never shows `Updating Realm List...` - `db` is still initializing, especially on first hydration. Wait and check `docker compose logs db`.
 - Slow first boot is normal - multi-GB SQL hydration plus world init.
 - Config belongs in `authserver/authserver.conf`, `worldserver/worldserver.conf`, and `worldserver/playerbots.conf`.
@@ -232,7 +226,7 @@ It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_
   Raw binaries: `cd /maptools/data && /maptools/mapextractor -i /client_data` (client root), then `/maptools/vmap4extractor -d /client_data/Data/` (the `Data/` dir itself with trailing slash — vmap concatenates paths without a separator, unlike mapextractor), then `mkdir -p vmaps && /maptools/vmap4assembler Buildings vmaps`.
 - `Missing Buildings directory, vmap extraction likely failed` (`assemble-vmaps.sh` guard) - `vmap4extractor` died earlier; scroll up past the assembler error for the real cause (usually input level or corrupt MPQ), fix that, then rerun. Never run the assembler standalone on a partial `Buildings/`.
 - Git Bash `/c/...` paths - Docker Desktop usually resolves them, but if `/client_data` comes up empty, use a WSL2 Linux path or a quoted Windows path, then confirm with `docker compose config`.
-- `worldserver` still missing `dbc/maps/vmaps` after a good extraction - copy the output over: `cp -r ./maptools/data/* ./worldserver/data/`.
+- `worldserver` still missing `dbc/maps/vmaps` after a good extraction - restart it so it picks up the fresh mount content (`docker compose up worldserver -d --force-recreate`), and verify the `./maptools/data` bind mount resolves.
 
 ## Credits
 

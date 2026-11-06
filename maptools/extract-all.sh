@@ -48,13 +48,13 @@ main()
 
 	if [[ "$WITH_MMAPS" -eq 0 ]]; then
 		echo "Skipping mmaps_generator (takes several hours). Re-run with --with-mmaps to include it."
-		echo "Done. Copy $OUTPUT_DIR/* to worldserver/data/ on the host."
+		echo "Done. worldserver consumes $OUTPUT_DIR directly (./maptools/data bind mount)."
 		return
 	fi
 
 	"$TOOLS_DIR/generate-mmaps.sh"
 
-	echo "Done. Copy $OUTPUT_DIR/* to worldserver/data/ on the host."
+	echo "Done. worldserver consumes $OUTPUT_DIR directly (./maptools/data bind mount)."
 }
 
 main "$@"

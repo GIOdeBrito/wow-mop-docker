@@ -1,9 +1,6 @@
 authserver/authserver
 worldserver/worldserver
 
-worldserver/data/*
-!worldserver/data/.gitkeep
-
 maptools/*
 !maptools/*.sh
 
