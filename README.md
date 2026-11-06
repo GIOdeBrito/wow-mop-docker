@@ -24,10 +24,10 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 
     Set `WOW_DATA_FOLDER_PATH` in `.env` to your MoP client data path. It is required by the `maptools` service.
 
-    If you downloaded via the `wow-downloader` service below, set it to the absolute path of `maptools/data_wow/Data`:
+    If you downloaded via the `wow-downloader` service below, set it to the absolute path of `wow-downloader/Game/Data`:
 
     ```bash
-    WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data_wow/Data
+    WOW_DATA_FOLDER_PATH=/absolute/path/to/wow-downloader/Game/Data
     ```
 
 2b. Download client data (skip if you already own a 5.4.8 client):
@@ -36,7 +36,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
     docker compose --profile wow-downloader up wow-downloader
     ```
 
-    This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `maptools/data_wow/` (`maptools/data_wow/Data/`, `maptools/data_wow/Updates/`). Total is ~25 GB. The service is idempotent, safe to re-run to resume.
+    This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `wow-downloader/Game/` (`wow-downloader/Game/Data/`, `wow-downloader/Game/Updates/`). Total is ~25 GB. The service is idempotent, safe to re-run to resume.
 
     Options:
 
@@ -53,7 +53,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
     Notes:
 
     - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and continues. They are not required for `maptools` extraction.
-    - `maptools/data_wow/` is git-ignored, safe for large binaries.
+    - `wow-downloader/Game/` is git-ignored, safe for large binaries.
 
 3. Generate game data via the `maptools` service:
 
@@ -177,7 +177,7 @@ docker compose --profile wow-downloader up wow-downloader
 What it does:
 
 - `set -eu` fail-fast, `curl -f` so HTTP errors abort instead of saving error pages.
-- Downloads to `/data` in-container, bind-mounted to `maptools/data_wow/` on host. Set `WOW_DATA_FOLDER_PATH` to `maptools/data_wow/Data` for `maptools`.
+- Downloads to `/data` in-container, bind-mounted to `wow-downloader/Game/` on host. Set `WOW_DATA_FOLDER_PATH` to `wow-downloader/Game/Data` for `maptools`.
 - Downloads `LOCALES` (default `enUS ptBR` via compose `${LOCALES:-enUS ptBR}`, override with `LOCALES=enUS` or `.env`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
 - Base MPQs, expansion MPQs, and base updates come from the NA CDN path.
 - Partial files are removed on failure. Re-run resumes.
@@ -186,7 +186,7 @@ What it does:
 Then set in `.env`:
 
 ```bash
-WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data_wow/Data
+WOW_DATA_FOLDER_PATH=/absolute/path/to/wow-downloader/Game/Data
 ```
 
 ### Extract game data

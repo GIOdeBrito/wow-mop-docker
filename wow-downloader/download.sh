@@ -3,7 +3,7 @@
 # Downloads MoP 5.4.8 client data for maptools extraction.
 # Runs inside wow-downloader service, writes to /data bind mount.
 # Env: LOCALES (default "enUS ptBR"), BASE_URL override.
-# Host data lands in ./maptools/data_wow/ via compose volume.
+# Host data lands in ./wow-downloader/Game/ via compose volume.
 #
 # Original author: @danielsreichenbach danielsreichenbach
 # Original source: https://gist.github.com/danielsreichenbach/3e56a6b0a6697742955b39e10e2d32e8

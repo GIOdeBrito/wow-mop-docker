@@ -10,3 +10,5 @@ maptools/*
 .env
 
 mysqlserver/data/**/**
+
+wow-downloader/Game
