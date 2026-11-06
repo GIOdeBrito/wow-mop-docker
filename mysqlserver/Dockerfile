@@ -13,5 +13,3 @@ FROM mysql:8.0
 RUN mkdir /wowsql
 
 COPY --from=builder /db-files/*.sql /wowsql
-
-
