@@ -36,6 +36,14 @@ services:
         command: /usr/local/bin/worldserver
         stdin_open: true
         tty: true
+        mem_limit: 5g
+        mem_reservation: 4g
+        deploy:
+            resources:
+                limits:
+                    memory: 5G
+                reservations:
+                    memory: 4G
         volumes:
             - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
             - ./worldserver/playerbots.conf:/usr/local/bin/playerbots.conf
