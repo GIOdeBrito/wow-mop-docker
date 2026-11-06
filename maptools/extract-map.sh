@@ -78,12 +78,8 @@ run_mapextractor()
 	echo "Extracting dbc/maps/cameras..."
 	cd "$OUTPUT_DIR"
 
-	if "$TOOLS_DIR/mapextractor" --help 2>&1 | grep -q -- "-i"; then
-		"$TOOLS_DIR/mapextractor" -i "$CLIENT_DATA"
-		return
-	fi
-
-	"$TOOLS_DIR/mapextractor"
+	echo "Running: mapextractor -i $CLIENT_DATA"
+	"$TOOLS_DIR/mapextractor" -i "$CLIENT_DATA"
 }
 
 run_vmap_extractor()
@@ -91,12 +87,8 @@ run_vmap_extractor()
 	echo "Extracting vmaps..."
 	cd "$OUTPUT_DIR"
 
-	if "$TOOLS_DIR/vmap4extractor" --help 2>&1 | grep -q -- "-i"; then
-		"$TOOLS_DIR/vmap4extractor" -i "$CLIENT_DATA"
-		return
-	fi
-
-	"$TOOLS_DIR/vmap4extractor"
+	echo "Running: vmap4extractor -i $CLIENT_DATA"
+	"$TOOLS_DIR/vmap4extractor" -i "$CLIENT_DATA"
 }
 
 run_vmap_assembler()
@@ -134,8 +126,8 @@ main()
 		ls -la "$CLIENT_DATA" >&2
 		exit 1
 	fi
-	if [[ ! -d "$CLIENT_DATA/Data/enUS" && ! -d "$CLIENT_DATA/Data/ptBR" && ! -d "$CLIENT_DATA/Data/enGB" && ! -d "$CLIENT_DATA/Data/deDE" && ! -d "$CLIENT_DATA/Data/frFR" ]]; then
-		echo "No locales detected under $CLIENT_DATA/Data (expected enUS/ptBR subfolder with locale-*.MPQ)." >&2
+	if [[ ! -d "$CLIENT_DATA/Data/enUS" && ! -d "$CLIENT_DATA/Data/ptBR" && ! -d "$CLIENT_DATA/Data/enGB" && ! -d "$CLIENT_DATA/Data/deDE" && ! -d "$CLIENT_DATA/Data/frFR" && ! -d "$CLIENT_DATA/Data/esES" && ! -d "$CLIENT_DATA/Data/esMX" && ! -d "$CLIENT_DATA/Data/itIT" && ! -d "$CLIENT_DATA/Data/koKR" && ! -d "$CLIENT_DATA/Data/ptPT" && ! -d "$CLIENT_DATA/Data/ruRU" && ! -d "$CLIENT_DATA/Data/zhCN" && ! -d "$CLIENT_DATA/Data/zhTW" ]]; then
+		echo "No locales detected under $CLIENT_DATA/Data (expected locale subfolder with locale-*.MPQ)." >&2
 		ls -la "$CLIENT_DATA/Data" >&2
 		exit 1
 	fi
