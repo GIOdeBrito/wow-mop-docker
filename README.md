@@ -5,7 +5,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 ## Requires
 
 - Docker with Compose v2
-- MoP 5.4.8 client
+- MoP 5.4.8 client (`Data/` folder with MPQs, or download it via `scripts/download-locales.sh` below)
 - MoP `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps` (generated via the `maptools` service, see below)
 - Server binaries: `authserver` and `worldserver`
 
@@ -23,6 +23,38 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
    ```
 
    Set `WOW_DATA_FOLDER_PATH` in `.env` to your MoP client data path. It is required by the `maptools` service.
+
+   If you downloaded via `scripts/download-locales.sh maptools/data` below, set it to the absolute path of `maptools/data/Data`:
+
+   ```bash
+   WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data/Data
+   ```
+
+2b. Download client data (skip if you already own a 5.4.8 client):
+
+   ```bash
+   sh scripts/download-locales.sh maptools/data
+   ```
+
+   This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `maptools/data/` (`maptools/data/Data/`, `maptools/data/Updates/`). Total is ~25 GB. The script is idempotent, safe to re-run to resume.
+
+   Options:
+
+   ```bash
+   # Custom target dir (default 5.4.8, use maptools/data for maptools input)
+   sh scripts/download-locales.sh maptools/data
+
+   # enUS only to save time/space
+   LOCALES=enUS sh scripts/download-locales.sh maptools/data
+
+   # ptBR only
+   LOCALES=ptBR sh scripts/download-locales.sh maptools/data
+   ```
+
+   Notes:
+
+   - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and continues. They are not required for `maptools` extraction.
+   - `maptools/data/` is git-ignored, safe for large binaries.
 
 3. Generate game data via the `maptools` service:
 
@@ -133,6 +165,31 @@ Point your 5.4.8 client at the host running `authserver:3724`, usually by settin
 ## Map tools (required for game data)
 
 `dbc`, `maps`, `vmaps`, and `mmaps` must be generated with the `maptools` service. Do not skip this by reusing data extracted for another core or version.
+
+### Download the client first
+
+If you do not own a 5.4.8 client, use `scripts/download-locales.sh`:
+
+```bash
+sh scripts/download-locales.sh maptools/data
+```
+
+What it does:
+
+- `set -eu` fail-fast, `curl -f` so HTTP errors abort instead of saving error pages.
+- Downloads to `TARGET_DIR` (`$1` or `$TARGET_DIR`, default `5.4.8`). Use `maptools/data` so `WOW_DATA_FOLDER_PATH` can point at `maptools/data/Data`.
+- Downloads `LOCALES` (default `enUS ptBR`, override with `LOCALES=enUS`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
+- Base MPQs, expansion MPQs, and base updates come from the NA CDN path.
+- Partial files are removed on failure. Re-run resumes.
+- Full layout: `Data/*.MPQ` (32), `Data/enUS/*.MPQ` (24), `Data/ptBR/*.MPQ` (24), `Updates/*.MPQ` (2), plus MFIL.
+
+Then set in `.env`:
+
+```bash
+WOW_DATA_FOLDER_PATH=/absolute/path/to/maptools/data/Data
+```
+
+### Extract game data
 
 The service runs `bash /maptools/extract-map.sh` on `up`:
 
