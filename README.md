@@ -175,7 +175,7 @@ docker compose --profile wow-downloader up wow-downloader
 What it does (`download-all.sh` runs minimal then full in sequence):
 
 - `set -eu` fail-fast, `curl -f` so HTTP errors abort instead of saving error pages.
-- Minimal step (`download-client.sh`, ~23 MB): extracts `"World of Warcraft 5.4.8 minimal"/` rar into `/data`, skips when `Game/Data` exists unless `FORCE=1`.
+- Minimal step (`download-client.sh`, ~23 MB): extracts `"World of Warcraft 5.4.8 minimal"/` rar into `/data`, merging only missing files (never skips on `Data/`). `FORCE=1` overwrites everything.
 - Full step (`download.sh`): downloads to `/data` in-container, bind-mounted to `wow-downloader/Game/` on host. Set `WOW_DATA_FOLDER_PATH` to `wow-downloader/Game/Data` for `maptools`.
 - Downloads `LOCALES` (default `enUS ptBR` via compose `${LOCALES:-enUS ptBR}`, override with `LOCALES=enUS` or `.env`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
 - Base MPQs, expansion MPQs, and base updates come from the NA CDN path.

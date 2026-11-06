@@ -2,16 +2,17 @@
 
 # Downloads minimal MoP 5.4.8 client for maptools extraction.
 # Runs inside wow-downloader service, writes to /data bind mount.
-# Env: TARGET_DIR (default /data), MINIMAL_URL override, FORCE=1 to overwrite.
+# Env: TARGET_DIR (default /data), MINIMAL_URL override, FORCE=1 to overwrite all.
+# Merges only missing files by default, never skips based on Data/.
 # Host data lands in ./wow-downloader/Game/ via compose volume.
 # Alt full fetch lives in download.sh (~25 GB). This minimal rar is ~23 MB.
 #
 # Source: https://devil.tauri.hu/~kimbatt/minimal_548.rar
-# Layout inside rar: "World of Warcraft 5.4.8 minimal"/ -> copied to Game/
+# Layout inside rar: "World of Warcraft 5.4.8 minimal"/ -> merged into Game/
 #
 # Manual run:
 #   docker compose --profile wow-downloader run --rm wow-downloader bash /wow-downloader/download-client.sh
-#   FORCE=1 to overwrite an already populated Game/.
+#   FORCE=1 to overwrite all files instead of merging missing ones.
 
 set -eu
 
@@ -22,19 +23,6 @@ RAR_NAME="minimal_548.rar"
 RAR_PATH="${TARGET_DIR}/${RAR_NAME}"
 EXTRACT_DIR="/tmp/minimal_548_extract"
 SRC_DIR="${EXTRACT_DIR}/World of Warcraft 5.4.8 minimal"
-
-is_populated()
-{
-	if [ -d "${TARGET_DIR}/Data" ]
-	then
-		if [ -n "$(ls -A "${TARGET_DIR}/Data")" ]
-		then
-			return 0
-		fi
-	fi
-
-	return 1
-}
 
 require_tool()
 {
@@ -103,6 +91,28 @@ install_client()
 	cp -a "$SRC_DIR/." "$TARGET_DIR/"
 }
 
+install_missing()
+{
+	mkdir -p "$TARGET_DIR"
+
+	(cd "$SRC_DIR" && find . -type d -print) | while IFS= read -r dir
+	do
+		mkdir -p "${TARGET_DIR}/${dir}"
+	done
+
+	(cd "$SRC_DIR" && find . -type f -print) | while IFS= read -r rel
+	do
+		if [ -f "${TARGET_DIR}/${rel}" ]
+		then
+			continue
+		fi
+
+		mkdir -p "$(dirname "${TARGET_DIR}/${rel}")"
+		cp "$SRC_DIR/${rel}" "${TARGET_DIR}/${rel}"
+		echo "Added missing: ${rel}"
+	done
+}
+
 cleanup_success()
 {
 	rm -rf "$EXTRACT_DIR"
@@ -111,21 +121,19 @@ cleanup_success()
 
 main()
 {
-	if is_populated
-	then
-		if [ "$FORCE" != "1" ]
-		then
-			echo "Target already populated: ${TARGET_DIR}/Data exists, skipping (FORCE=1 to overwrite)." >&2
-			return 0
-		fi
-
-		echo "FORCE=1, overwriting ${TARGET_DIR}/"
-	fi
-
 	mkdir -p "$TARGET_DIR"
 	download_rar
 	extract_rar
-	install_client
+
+	if [ "$FORCE" = "1" ]
+	then
+		echo "FORCE=1, overwriting ${TARGET_DIR}/"
+		install_client
+	else
+		echo "Merging missing files into ${TARGET_DIR}/"
+		install_missing
+	fi
+
 	cleanup_success
 	echo "Done. Minimal client in ${TARGET_DIR}/"
 }
