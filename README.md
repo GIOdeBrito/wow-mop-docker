@@ -6,7 +6,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 
 - Docker with Compose v2
 - MoP 5.4.8 client
-- MoP `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps`
+- MoP `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps` (generated via the `maptools` service, see below)
 - Server binaries: `authserver` and `worldserver`
 
 ## Setup
@@ -16,17 +16,32 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
    - `authserver/authserver`
    - `worldserver/worldserver`
 
-2. Provide game data:
-
-   - Drop extracted `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps` into `worldserver/data`
-
-3. Configure environment:
+2. Configure environment:
 
    ```bash
    cp .env.example .env
    ```
 
-   Set `WOW_DATA_FOLDER_PATH` in `.env` to your client data path. It is only used by the optional `maptools` profile.
+   Set `WOW_DATA_FOLDER_PATH` in `.env` to your MoP client data path. It is required by the `maptools` service.
+
+3. Generate game data via the `maptools` service:
+
+   - Do not drop in externally extracted data. Extraction must be done via `maptools` so `dbc`, `maps`, `vmaps`, and `mmaps` match this build.
+   - Start the helper container:
+
+     ```bash
+     docker compose --profile maptools up -d maptools
+     docker compose exec maptools bash
+     ```
+
+   - Inside the container, `/maptools` holds `mapextractor`, `vmap4extractor`, `vmap4assembler`, and `mmaps_generator`, and `/client_data` holds your client data from `WOW_DATA_FOLDER_PATH`. Run the extractors from `/maptools` so output lands in `./maptools/data` on the host (`cameras`, `dbc`, `maps`, `vmaps`).
+   - Copy the result into the worldserver data directory:
+
+     ```bash
+     cp -r ./maptools/data/* ./worldserver/data/
+     ```
+
+   - Alternative source for pre-extracted data: https://drive.google.com/file/d/1tnx-f8Ffourk9KEv_NkRts6htFQq3hnG/view
 
 4. Start everything:
 
@@ -38,10 +53,10 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 
 Boots in order, waiting for each health log before continuing:
 
-1. `db` — waits for `ready for connections`
+1. `db` - waits for `ready for connections`
    - Detects fresh init via `SQL init process done. Ready for start up` and sets a fresh-DB flag
-2. `authserver` — waits for `Updating Realm List...`
-3. `worldserver` — waits for `World initialized in`
+2. `authserver` - waits for `Updating Realm List...`
+3. `worldserver` - waits for `World initialized in`
 
 On a fresh database it prints `Fresh database detected` at the end. See account creation below.
 
@@ -109,22 +124,29 @@ Detach safely with `Ctrl-p` then `Ctrl-q`. Do not use `Ctrl-c`, it stops the wor
 
 Point your 5.4.8 client at the host running `authserver:3724`, usually by setting the realmlist to `127.0.0.1` for local play. Create the account first, then log in.
 
-## Map tools (optional)
+## Map tools (required for game data)
 
-The `maptools` profile extracts maps from client data:
+`dbc`, `maps`, `vmaps`, and `mmaps` must be generated with the `maptools` service. Do not skip this by reusing data extracted for another core or version.
 
 ```bash
-docker compose --profile maptools up maptools
+docker compose --profile maptools up -d maptools
+docker compose exec maptools bash
 ```
+
+Inside the container:
+
+- `/maptools` - extractor binaries (`mapextractor`, `vmap4extractor`, `vmap4assembler`, `mmaps_generator`)
+- `/client_data` - your MoP client data from `WOW_DATA_FOLDER_PATH`
+- Run output goes to `./maptools/data` on the host, then copy it to `./worldserver/data` as described in Setup step 3.
 
 It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_data`.
 
 ## Troubleshooting
 
-- `ENV file not found` — copy `.env.example` to `.env` first.
-- `worldserver` exits immediately — missing binaries or missing `worldserver/data` content. Check `docker compose logs worldserver`.
-- `authserver` never shows `Updating Realm List...` — `db` is still initializing, especially on first hydration. Wait and check `docker compose logs db`.
-- Slow first boot is normal — multi-GB SQL hydration plus world init.
+- `ENV file not found` - copy `.env.example` to `.env` first.
+- `worldserver` exits immediately - missing binaries or missing `worldserver/data` content. Regenerate it via `maptools` and copy it to `worldserver/data`. Check `docker compose logs worldserver`.
+- `authserver` never shows `Updating Realm List...` - `db` is still initializing, especially on first hydration. Wait and check `docker compose logs db`.
+- Slow first boot is normal - multi-GB SQL hydration plus world init.
 - Config belongs in `authserver/authserver.conf`, `worldserver/worldserver.conf`, and `worldserver/playerbots.conf`.
 
 ## Credits
