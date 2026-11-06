@@ -40,7 +40,7 @@ services:
             - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
             - ./worldserver/playerbots.conf:/usr/local/bin/playerbots.conf
             - ./worldserver/worldserver:/usr/local/bin/worldserver
-            - ./worldserver/data:/usr/local/bin/Data
+            - ./maptools/data:/usr/local/bin/Data
         networks:
             - pandaria-network
         ports:
