@@ -9,15 +9,17 @@ services:
             - ./mysqlserver/0000-init.sql:/giosql/0000-init.sql
         networks:
             - pandaria-network
+
     build:
         build: ./pandaria
         command: sleep infinity
-        networks:
-            - pandaria-network
         profiles: [ "build" ]
+
     authserver:
         build: ./authserver
         command: /usr/local/bin/authserver
+        stdin_open: true
+        tty: true
         volumes:
             - ./authserver/authserver.conf:/usr/local/etc/authserver.conf
             - ./authserver/authserver:/usr/local/bin/authserver
@@ -27,6 +29,7 @@ services:
             - "3724:3724"
         depends_on:
             - db
+
     worldserver:
         build: ./authserver
         command: /usr/local/bin/worldserver
@@ -34,8 +37,8 @@ services:
         tty: true
         volumes:
             - ./worldserver/worldserver.conf:/usr/local/etc/worldserver.conf
+            - ./worldserver/playerbots.conf:/usr/local/bin/playerbots.conf
             - ./worldserver/worldserver:/usr/local/bin/worldserver
-            - ./worldserver/data:/usr/local/bin/data
             - ./worldserver/data:/usr/local/bin/Data
         networks:
             - pandaria-network
@@ -43,6 +46,15 @@ services:
             - "8085:8085"
         depends_on:
             - db
+
+    maptools:
+        image: ubuntu:24.04
+        command: sleep infinity
+        env_file: .env
+        volumes:
+            - ./maptools:/maptools
+            - ${WOW_DATA_FOLDER_PATH}:/client_data
+        profiles: [ "maptools" ]
 
 networks:
     pandaria-network:
