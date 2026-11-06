@@ -8,3 +8,5 @@ maptools/*
 !maptools/extract-map.sh
 
 .env
+
+mysqlserver/data/**/**
