@@ -202,7 +202,7 @@ Inside the container:
       docker compose --profile maptools run maptools bash /maptools/extract-all.sh --with-mmaps
 ```
 
-It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_data`.
+It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_data`. The image builds from `./maptools/Dockerfile` (stock Ubuntu plus the Boost runtime the assembler/generator link against).
 
 ## Troubleshooting
 

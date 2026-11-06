@@ -49,7 +49,7 @@ services:
             - db
 
     maptools:
-        image: ubuntu:24.04
+        build: ./maptools
         command: ["bash", "/maptools/extract-all.sh"]
         env_file: .env
         volumes:

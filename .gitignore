@@ -3,6 +3,7 @@ worldserver/worldserver
 
 maptools/*
 !maptools/*.sh
+!maptools/Dockerfile
 
 .env
 
