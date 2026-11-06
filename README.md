@@ -217,6 +217,15 @@ It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_
 - `authserver` never shows `Updating Realm List...` - `db` is still initializing, especially on first hydration. Wait and check `docker compose logs db`.
 - Slow first boot is normal - multi-GB SQL hydration plus world init.
 - Config belongs in `authserver/authserver.conf`, `worldserver/worldserver.conf`, and `worldserver/playerbots.conf`.
+- `maptools` prints `No locales detected` - `WOW_DATA_FOLDER_PATH` points one level too deep. It must be the client root containing `Data/` (e.g. `.../wow-downloader/Game`), not `.../Game/Data`. The extractors build `<input>/Data/<locale>/locale-<locale>.MPQ` themselves.
+- `maptools` repeats the old failure after fixing `.env` - compose reuses the existing container and its old mounts. Recreate it: `docker compose --profile maptools down --remove-orphans` then `up`, or `up --force-recreate`.
+- `Found orphan containers ...` - stale containers from a renamed service or a second checkout. Clean with `down --remove-orphans`, and make sure you run compose from the edited checkout directory.
+- Verify the mount before extracting: `docker compose --profile maptools run --rm maptools ls /client_data` should list `Data/ Updates/ *.mfil`; `ls /client_data/Data/enUS` should show `locale-enUS.MPQ`. If it shows bare MPQs at top level, the path is one level too deep (see above). If it is empty, the host path did not resolve (see Git Bash note below).
+- `vmap4extractor` exits right after `Data/misc.MPQ` - same root cause as `No locales detected` (wrong input level), or a truncated MPQ. Re-run the mount check, then delete the suspect MPQ and re-run `wow-downloader` (it skips existing files and resumes).
+- Stale `maptools/data/Buildings` from a failed run - `extract-map.sh` removes it automatically on each run; if you invoke the tools by hand, `rm -rf ./maptools/data/Buildings` first.
+- Manual extraction (same invocation the script uses): `docker compose --profile maptools run --rm maptools bash -c 'cd /maptools/data && /maptools/mapextractor -i /client_data'` then `vmap4extractor -i /client_data` and `vmap4assembler Buildings vmaps`.
+- Git Bash `/c/...` paths - Docker Desktop usually resolves them, but if `/client_data` comes up empty, use a WSL2 Linux path or a quoted Windows path, then confirm with `docker compose config`.
+- `worldserver` still missing `dbc/maps/vmaps` after a good extraction - copy the output over: `cp -r ./maptools/data/* ./worldserver/data/`.
 
 ## Credits
 
