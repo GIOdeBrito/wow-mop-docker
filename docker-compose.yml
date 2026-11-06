@@ -59,10 +59,13 @@ services:
 
     wow-downloader:
         build: ./wow-downloader
-        command: ["bash", "/wow-downloader/download.sh"]
+        command: ["bash", "/wow-downloader/download-all.sh"]
         env_file: .env
         environment:
             LOCALES: ${LOCALES:-enUS ptBR}
+            MINIMAL_URL: ${MINIMAL_URL:-}
+            BASE_URL: ${BASE_URL:-}
+            FORCE: ${FORCE:-}
         volumes:
             - ./wow-downloader:/wow-downloader
             - ./wow-downloader/Game:/data

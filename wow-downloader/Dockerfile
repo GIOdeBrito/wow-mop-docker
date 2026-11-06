@@ -4,4 +4,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 
 COPY download.sh /wow-downloader/download.sh
 COPY download-client.sh /wow-downloader/download-client.sh
-RUN chmod +x /wow-downloader/download.sh /wow-downloader/download-client.sh
+COPY download-all.sh /wow-downloader/download-all.sh
+RUN chmod +x /wow-downloader/download.sh /wow-downloader/download-client.sh /wow-downloader/download-all.sh

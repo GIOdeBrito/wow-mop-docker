@@ -36,7 +36,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
     docker compose --profile wow-downloader up wow-downloader
     ```
 
-    This fetches the 5.4.8 MFIL, base MPQs, expansion MPQs, base updates, final updates, and `enUS` + `ptBR` locale MPQs into `wow-downloader/Game/` (`wow-downloader/Game/Data/`, `wow-downloader/Game/Updates/`). Total is ~25 GB. The service is idempotent, safe to re-run to resume.
+    This runs minimal fetch first (`download-client.sh`, ~23 MB rar, seconds) then full fetch (`download.sh`, ~25 GB, hours) into `wow-downloader/Game/` (`wow-downloader/Game/Data/`, `wow-downloader/Game/Updates/`). Both steps are idempotent, safe to re-run to resume. Minimal populates base files, full fills per-file gaps.
 
     Options:
 
@@ -174,10 +174,11 @@ If you do not own a 5.4.8 client, use the `wow-downloader` service:
 docker compose --profile wow-downloader up wow-downloader
 ```
 
-What it does:
+What it does (`download-all.sh` runs minimal then full in sequence):
 
 - `set -eu` fail-fast, `curl -f` so HTTP errors abort instead of saving error pages.
-- Downloads to `/data` in-container, bind-mounted to `wow-downloader/Game/` on host. Set `WOW_DATA_FOLDER_PATH` to `wow-downloader/Game/Data` for `maptools`.
+- Minimal step (`download-client.sh`, ~23 MB): extracts `"World of Warcraft 5.4.8 minimal"/` rar into `/data`, skips when `Game/Data` exists unless `FORCE=1`.
+- Full step (`download.sh`): downloads to `/data` in-container, bind-mounted to `wow-downloader/Game/` on host. Set `WOW_DATA_FOLDER_PATH` to `wow-downloader/Game/Data` for `maptools`.
 - Downloads `LOCALES` (default `enUS ptBR` via compose `${LOCALES:-enUS ptBR}`, override with `LOCALES=enUS` or `.env`). Each locale gets 6 speech/locale MPQs + 18 locale updates from the EU CDN path.
 - Base MPQs, expansion MPQs, and base updates come from the NA CDN path.
 - Partial files are removed on failure. Re-run resumes.
