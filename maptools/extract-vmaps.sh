@@ -97,8 +97,11 @@ main()
 	echo "Extracting vmaps..."
 	cd "$OUTPUT_DIR"
 
-	echo "Running: vmap4extractor -d $CLIENT_DATA"
-	"$TOOLS_DIR/vmap4extractor" -d "$CLIENT_DATA"
+	echo "Running: vmap4extractor -d $CLIENT_DATA/Data/"
+	# NOTE: vmap4extractor concatenates its input path directly (no separator,
+	# no Data/ prefix), unlike mapextractor -i which takes the client root.
+	# The trailing slash is load-bearing: "$CLIENT_DATA/Data/" only.
+	"$TOOLS_DIR/vmap4extractor" -d "$CLIENT_DATA/Data/"
 }
 
 main "$@"

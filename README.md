@@ -221,7 +221,7 @@ It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_
 - `maptools` repeats the old failure after fixing `.env` - compose reuses the existing container and its old mounts. Recreate it: `docker compose --profile maptools down --remove-orphans` then `up`, or `up --force-recreate`.
 - `Found orphan containers ...` - stale containers from a renamed service or a second checkout. Clean with `down --remove-orphans`, and make sure you run compose from the edited checkout directory.
 - Verify the mount before extracting: `docker compose --profile maptools run --rm maptools ls /client_data` should list `Data/ Updates/ *.mfil`; `ls /client_data/Data/enUS` should show `locale-enUS.MPQ`. If it shows bare MPQs at top level, the path is one level too deep (see above). If it is empty, the host path did not resolve (see Git Bash note below).
-- `vmap4extractor` exits right after `Data/misc.MPQ` - same root cause as `No locales detected` (wrong input level), or a truncated MPQ. Re-run the mount check, then delete the suspect MPQ and re-run `wow-downloader` (it skips existing files and resumes).
+- `vmap4extractor` exits right after `Data/misc.MPQ` (or prints `/client_data/misc.MPQ` and stops) - it takes the `Data/` dir itself (`-d /client_data/Data/`, trailing slash required), unlike `mapextractor -i` which takes the client root. The script already handles this split; only manual invocations need care. If paths are right, suspect a truncated MPQ: delete it and re-run `wow-downloader` (it skips existing files and resumes).
 - Stale `maptools/data/Buildings` from a failed run - `extract-vmaps.sh` removes it automatically on each run; if you invoke the tools by hand, `rm -rf ./maptools/data/Buildings` first.
 - Manual extraction, one script per program (same invocations the orchestrator uses):
   ```bash
@@ -229,7 +229,7 @@ It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_
   docker compose --profile maptools run --rm maptools bash /maptools/extract-vmaps.sh
   docker compose --profile maptools run --rm maptools bash /maptools/assemble-vmaps.sh
   ```
-  Raw binaries: `cd /maptools/data && /maptools/mapextractor -i /client_data`, then `/maptools/vmap4extractor -d /client_data`, then `mkdir -p vmaps && /maptools/vmap4assembler Buildings vmaps`.
+  Raw binaries: `cd /maptools/data && /maptools/mapextractor -i /client_data` (client root), then `/maptools/vmap4extractor -d /client_data/Data/` (the `Data/` dir itself with trailing slash — vmap concatenates paths without a separator, unlike mapextractor), then `mkdir -p vmaps && /maptools/vmap4assembler Buildings vmaps`.
 - `Missing Buildings directory, vmap extraction likely failed` (`assemble-vmaps.sh` guard) - `vmap4extractor` died earlier; scroll up past the assembler error for the real cause (usually input level or corrupt MPQ), fix that, then rerun. Never run the assembler standalone on a partial `Buildings/`.
 - Git Bash `/c/...` paths - Docker Desktop usually resolves them, but if `/client_data` comes up empty, use a WSL2 Linux path or a quoted Windows path, then confirm with `docker compose config`.
 - `worldserver` still missing `dbc/maps/vmaps` after a good extraction - copy the output over: `cp -r ./maptools/data/* ./worldserver/data/`.
