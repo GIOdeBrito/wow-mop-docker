@@ -50,7 +50,7 @@ services:
 
     maptools:
         image: ubuntu:24.04
-        command: ["bash", "/maptools/extract-map.sh"]
+        command: ["bash", "/maptools/extract-all.sh"]
         env_file: .env
         volumes:
             - ./maptools:/maptools
