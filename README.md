@@ -52,7 +52,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 
     Notes:
 
-    - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and continues. They are not required for `maptools` extraction.
+    - Cinematics under `Data/<locale>/Interface/Cinematics/` are optional. The CDN currently returns 404 for them, the script warns and creates an empty zero-byte placeholder so in-game path references resolve. Reruns skip placeholders. They are not required for `maptools` extraction.
     - `wow-downloader/Game/` is git-ignored, safe for large binaries.
 
 3. Generate game data via the `maptools` service:

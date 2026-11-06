@@ -48,8 +48,8 @@ download_optional()
 
 	if ! curl -fL# --retry 2 --retry-delay 5 --connect-timeout 20 "$1" -o "$2"
 	then
-		echo "Warning: optional file not found, skipping $1" >&2
-		rm -f "$2"
+		echo "Warning: optional file not found, creating empty placeholder $1" >&2
+		: > "$2"
 		return 0
 	fi
 }
@@ -141,13 +141,13 @@ download_locale_updates()
 
 download_cinematics()
 {
-	echo "Downloading $1 cinematics (optional, skipped on 404)..."
+	echo "Downloading $1 cinematics (optional, empty placeholder on 404)..."
 	mkdir -p "${TARGET_DIR}/Data/$1/Interface/Cinematics"
 
 	for movie in DSI_Act1_1280.avi DSI_Act1_800.avi DSI_Act2_1280.avi DSI_Act2_800.avi DSI_Act3_1280.avi DSI_Act3_800.avi DSI_Act4_1280.avi DSI_Act4_800.avi Goblin_1280.avi Goblin_800.avi Goblin.mp3 Goblin.sbt Logo_1024.avi Logo_800.avi Worgen_1280.avi Worgen_800.avi Worgen.mp3 Worgen.sbt WoW3X_Intro_1280.avi WoW3X_Intro_800.avi WoW3X_Intro.mp3 WoW3X_Intro.sbt WOW_FotLK_1024.avi WOW_FotLK_800.avi WOW_Intro_1024.avi WOW_Intro_800.avi WOW_Intro_BC_1024.avi WOW_Intro_BC_800.avi WOW_Intro_LK_1280.avi WOW_Intro_LK_800.avi WoW_Intro_LK.mp3 WoW_Intro_LK.sbt WOW_Wrathgate_1280.avi WOW_Wrathgate_800.avi WOW_Wrathgate.mp3 WoW_Wrathgate.sbt
 	do
 		echo "Downloading ${movie} to ${TARGET_DIR}/Data/$1/Interface/Cinematics/${movie}"
-		# Cinematics are not required for maptools extraction, skip missing files.
+		# Not required for extraction, but game code may reference paths, so keep empty file.
 		download_optional "${BASE_URL}/wow-pod-retail/NA/15890.direct/Data/$1/Interface/Cinematics/${movie}" "${TARGET_DIR}/Data/$1/Interface/Cinematics/${movie}"
 	done
 }
