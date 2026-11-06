@@ -78,8 +78,6 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
      cp -r ./maptools/data/* ./worldserver/data/
      ```
 
-   - Alternative source for pre-extracted data: https://drive.google.com/file/d/1tnx-f8Ffourk9KEv_NkRts6htFQq3hnG/view
-
 4. Start everything:
 
    ```bash
