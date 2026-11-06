@@ -18,8 +18,16 @@ fi
 
 echo "Waiting for database..."
 
+FRESH_DB=0
+
 while true; do
-	if docker compose logs db 2>&1 | grep -qE "ready for connections"; then
+	DB_LOGS=$(docker compose logs db 2>&1)
+
+	if echo "$DB_LOGS" | grep -qF "SQL init process done. Ready for start up"; then
+		FRESH_DB=1
+	fi
+
+	if echo "$DB_LOGS" | grep -qE "ready for connections"; then
 		break
 	fi
 
@@ -61,6 +69,12 @@ while true; do
 
 	sleep 3
 done
+
+echo "Worldserver is ready."
+
+if [[ "$FRESH_DB" -eq 1 ]]; then
+	echo "Fresh database detected. You should create a base account."
+fi
 
 echo "All done. You can go play now."
 
