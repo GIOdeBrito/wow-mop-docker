@@ -18,7 +18,7 @@ usage()
 	echo ""
 	echo "Expected mounts:"
 	echo "  $TOOLS_DIR  - extractor binaries"
-	echo "  $CLIENT_DATA - MoP 5.4.8 client Data folder (WOW_DATA_FOLDER_PATH)"
+	echo "  $CLIENT_DATA - MoP 5.4.8 client root folder, containing Data/ (WOW_DATA_FOLDER_PATH)"
 	echo "  $OUTPUT_DIR - extraction output (host ./maptools/data)"
 }
 
@@ -128,8 +128,21 @@ main()
 	require_dir "$TOOLS_DIR"
 	require_dir "$CLIENT_DATA"
 	require_non_empty_dir "$CLIENT_DATA"
+	if [[ ! -d "$CLIENT_DATA/Data" ]]; then
+		echo "Invalid client folder: $CLIENT_DATA/Data not found." >&2
+		echo "WOW_DATA_FOLDER_PATH must point at the client root (containing Data/), not at Data/ itself." >&2
+		ls -la "$CLIENT_DATA" >&2
+		exit 1
+	fi
+	if [[ ! -d "$CLIENT_DATA/Data/enUS" && ! -d "$CLIENT_DATA/Data/ptBR" && ! -d "$CLIENT_DATA/Data/enGB" && ! -d "$CLIENT_DATA/Data/deDE" && ! -d "$CLIENT_DATA/Data/frFR" ]]; then
+		echo "No locales detected under $CLIENT_DATA/Data (expected enUS/ptBR subfolder with locale-*.MPQ)." >&2
+		ls -la "$CLIENT_DATA/Data" >&2
+		exit 1
+	fi
 	mkdir -p "$OUTPUT_DIR"
 	require_dir "$OUTPUT_DIR"
+
+	rm -rf "$OUTPUT_DIR/Buildings"
 
 	require_file "$TOOLS_DIR/mapextractor"
 	require_file "$TOOLS_DIR/vmap4extractor"
