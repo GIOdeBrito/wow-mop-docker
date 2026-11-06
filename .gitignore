@@ -3,3 +3,8 @@ worldserver/worldserver
 
 worldserver/data/*
 !worldserver/data/.gitkeep
+
+maptools/*
+!maptools/extract-map.sh
+
+.env
