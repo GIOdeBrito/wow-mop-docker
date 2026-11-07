@@ -9,6 +9,36 @@ if [[ ! -f ".env" ]]; then
 	exit 1
 fi
 
+# Verify if auth and worldserver's binaries are in their proper folders
+if [[ ! -f "authserver/authserver" ]]; then
+	echo "authserver binary not found at authserver/authserver. Provide prebuilt binary (see README Setup step 1) and try again."
+	exit 1
+fi
+
+if [[ ! -f "worldserver/worldserver" ]]; then
+	echo "worldserver binary not found at worldserver/worldserver. Provide prebuilt binary (see README Setup step 1) and try again."
+	exit 1
+fi
+
+# Warn that the map extraction tools are not in maptools/
+if [[ ! -f "maptools/mapextractor" ]]; then
+	echo "WARNING: maptools binary not found at maptools/mapextractor. Extraction via maptools service will fail."
+fi
+
+if [[ ! -f "maptools/vmap4extractor" ]]; then
+	echo "WARNING: maptools binary not found at maptools/vmap4extractor. Extraction via maptools service will fail."
+fi
+
+if [[ ! -f "maptools/vmap4assembler" ]]; then
+	echo "WARNING: maptools binary not found at maptools/vmap4assembler. Extraction via maptools service will fail."
+fi
+
+if [[ ! -f "maptools/mmaps_generator" ]]; then
+	echo "WARNING: maptools binary not found at maptools/mmaps_generator. Extraction via maptools service will fail."
+fi
+
+printf "\n\n"
+
 echo "Starting MySQL database..."
 
 if ! docker compose up db -d; then
@@ -50,6 +80,12 @@ while true; do
 	fi
 
 	sleep 3
+
+	CID=$(docker compose ps -q authserver)
+	if [[ -z "$CID" ]] || ! docker inspect -f '{{.State.Running}}' "$CID" 2>/dev/null | grep -q "true"; then
+		echo "authserver exited abruptly, restarting..."
+		docker compose up authserver -d
+	fi
 done
 
 echo "Authserver is ready."
