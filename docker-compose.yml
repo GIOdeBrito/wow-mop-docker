@@ -1,6 +1,5 @@
 services:
     db:
-        #image: mysql:8.0
         build: ./mysqlserver
         environment:
             MYSQL_ROOT_PASSWORD: password
