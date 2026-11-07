@@ -6,7 +6,7 @@ Docker setup for a Mists of Pandaria 5.4.8 server (Legends of Azeroth + Playerbo
 
 - Docker with Compose v2
 - MoP 5.4.8 client (`Data/` folder with MPQs, or download it via the `wow-downloader` service below)
-- MoP `dbc`, `dbc2`, `maps`, `vmaps`, `mmaps` (generated via the `maptools` service, see below)
+- MoP `dbc`, `maps`, `vmaps`, `mmaps` (generated via the `maptools` service, see below)
 - Server binaries: `authserver` and `worldserver`
 
 ## Setup
@@ -203,6 +203,46 @@ Inside the container:
 ```
 
 It mounts `./maptools` to `/maptools` and `${WOW_DATA_FOLDER_PATH}` to `/client_data`. The image builds from `./maptools/Dockerfile` (stock Ubuntu plus the Boost runtime the assembler/generator link against).
+
+## Bot population & resource limits (60 bots / 5GB soft cap)
+
+Tuned to stay under 5GB while keeping dungeon queues working. Bots stay logged in and roam, but expensive background systems are off or throttled.
+
+| Area | File:Key | Value | Why |
+| --- | --- | --- | --- |
+| Population | `playerbots.conf: MinRandomBots / MaxRandomBots` | `60 / 60` | was 500 |
+| Pool | `playerbots.conf: RotationPoolSize` | `60` | match online count |
+| Accounts | `playerbots.conf: RandomBotAccountCount` | `200` kept | needs `> 60/10+50=56`, no reset needed |
+| RAM cap | `docker-compose.yml: worldserver mem_limit / deploy.limits` | `5g / 5G` | hard max |
+| RAM soft | `docker-compose.yml: worldserver mem_reservation / deploy.reservations` | `4g / 4G` | avoid OOM-kill, scheduler hint |
+| Idle throttle | `playerbots.conf: BotActiveAlone / BotActiveAloneDurationSeconds` | `10 / 30` | only empty areas; near-player stays 100% via `BotActiveAloneForceWhen*` + `SmartScale` |
+| Login smoothing | `playerbots.conf: RandomBotsPerInterval / RandomBotUpdateInterval` | `10 / 60` | avoid startup spike |
+| Dungeons kept | `playerbots.conf: RandomBotJoinLfg / RandomBotGroupNearby / AutoDoQuests` | `1 / 1 / 1` | LFG fill still works |
+| Disabled heavy | `playerbots.conf: RandomBotJoinBG` | `0` | no BG queue/teleport/combat |
+| | `playerbots.conf: BgCheckInterval` | `120` | was 30 |
+| | `playerbots.conf: DuelSpotSeedEnable` | `0` | kills re-level/re-gear/teleport sweep; `DuelSpotEnable` stays `1` |
+| | `playerbots.conf: EnableRandomBotTrading` | `0` | no trade scans |
+| | `playerbots.conf: RpgQuestHubSearchEnable` | `0` | no 2500yd giver scan |
+| | `playerbots.conf: RoamTransports / RoamTransportCampChance` | `0 / 0` | no travel-graph/boat/zeppelin logic |
+| | `playerbots.conf: AutoAvoidAoe / FastReactInBG` | `0 / 0` | no AoE avoidance tick |
+| | `playerbots.conf: InviteChat / SayWhenCollectingItems` | `0 / 0` | no chat spam |
+| Roam weights | `playerbots.conf: RpgStatusProbWeight.TravelFlight` | `0` | was 20, no taxis/cross-map |
+| | `playerbots.conf: RpgStatusProbWeight.OutdoorPvp` | `0` | was 10 |
+| | `playerbots.conf: RpgStatusProbWeight.DuelSpot` | `0` | was 10 |
+| | `playerbots.conf: RpgStatusProbWeight.GoGrind` | `5` | was 15 |
+| | `playerbots.conf: RpgStatusProbWeight.Rest` | `30` | was 8, more sitting |
+| AI throttle | `playerbots.conf: IterationsPerTick / ReactDelay / RpgDelay` | `4 / 300 / 30000` | was `10 / 100 / 10000`, dumber but alive |
+| Scan throttle | `playerbots.conf: SightDistance / ReactDistance / GrindDistance / RpgDistance / MaxMovementSearchTime` | `60.0 / 80.0 / 40.0 / 100 / 1` | was `100.0 / 150.0 / 75.0 / 200 / 3` |
+| RAM saver | `worldserver.conf: DontCacheRandomMovementPaths` | `1` | less path cache for 5G; keep `GridUnload=1`, `MapUpdate.Threads=1` |
+
+Apply:
+
+```bash
+docker compose up -d --force-recreate worldserver
+docker stats worldserver --no-stream
+```
+
+If old 500 bots persist in DB, trim once with `.playerbot rndbot reset` in the worldserver console, then restart.
 
 ## Troubleshooting
 
