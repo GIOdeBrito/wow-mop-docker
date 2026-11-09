@@ -15,11 +15,6 @@ services:
         command: sleep infinity
         profiles: [ "build" ]
 
-    buildskyfire:
-        build: ./skyfire
-        command: sleep infinity
-        profiles: [ "buildskyfire" ]
-
     authserver:
         build: ./authserver
         command: /usr/local/bin/authserver
