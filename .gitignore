@@ -8,5 +8,7 @@ maptools/*
 .env
 
 mysqlserver/data/**/**
+mysqlserver/migrations/*
+!mysqlserver/migrations/.gitkeep
 
 wow-downloader/Game

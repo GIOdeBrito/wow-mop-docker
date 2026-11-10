@@ -6,6 +6,7 @@ services:
         volumes:
             - ./mysqlserver/init-check.sh:/docker-entrypoint-initdb.d/script1.sh
             - ./mysqlserver/0000-init.sql:/giosql/0000-init.sql
+            - ./mysqlserver/migrations:/migrations
             - ./mysqlserver/data:/var/lib/mysql
         networks:
             - pandaria-network
